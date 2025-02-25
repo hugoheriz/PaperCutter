@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Cutting Optimizer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .input-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin-top: 15px;
+            width: 100%;
+            background-color: white;
+            border-radius: 4px;
+        }
+        .preset-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .preset-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px;
+            font-size: 14px;
+            background-color: #e9ecef;
+            color: #333;
+        }
+        .preset-btn:hover {
+            background-color: #dee2e6;
+        }
+        .results-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .warning {
+            color: #dc3545;
+            margin-top: 5px;
+        }
+        .paper-sizes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .paper-size-item {
+            background-color: #e9ecef;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .toggle-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .toggle-btn {
+            background-color: #6c757d;
+            width: auto;
+            padding: 8px 16px;
+        }
+        #paperSizesReference {
+            display: none;
+            margin-top: 15px;
+        }
+        @media (max-width: 500px) {
+            .preset-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Paper Cutting Optimizer</h1>
+    
+    <div class="input-section">
+        <div class="input-group">
+            <label for="sourceSelect">Source Paper:</label>
+            <select id="sourceSelect">
+                <option value="custom">Custom Size</option>
+                <option value="A0">A0 (841 × 1189 mm)</option>
+                <option value="A1">A1 (594 × 841 mm)</option>
+                <option value="A2">A2 (420 × 594 mm)</option>
+                <option value="A3">A3 (297 × 420 mm)</option>
+                <option value="A4">A4 (210 × 297 mm)</option>
+                <option value="SRA0">SRA0 (900 × 1280 mm)</option>
+                <option value="SRA1">SRA1 (640 × 900 mm)</option>
+                <option value="SRA2">SRA2 (450 × 640 mm)</option>
+                <option value="SRA3">SRA3 (320 × 450 mm)</option>
+                <option value="SRA4">SRA4 (225 × 320 mm)</option>
+            </select>
+        </div>
+        
+        <div id="customSourceInputs" style="display: none;">
+            <div class="input-group">
+                <label for="sourceWidth">Source Width (mm):</label>
+                <input type="number" id="sourceWidth" min="1" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="sourceHeight">Source Height (mm):</label>
+                <input type="number" id="sourceHeight" min="1" step="0.1">
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="targetSelect">Target Paper:</label>
+            <select id="targetSelect">
+                <option value="custom">Custom Size</option>
+                <option value="A1">A1 (594 × 841 mm)</option>
+                <option value="A2">A2 (420 × 594 mm)</option>
+                <option value="A3">A3 (297 × 420 mm)</option>
+                <option value="A4">A4 (210 × 297 mm)</option>
+                <option value="A5">A5 (148 × 210 mm)</option>
+                <option value="SRA1">SRA1 (640 × 900 mm)</option>
+                <option value="SRA2">SRA2 (450 × 640 mm)</option>
+                <option value="SRA3">SRA3 (320 × 450 mm)</option>
+                <option value="SRA4">SRA4 (225 × 320 mm)</option>
+            </select>
+        </div>
+        
+        <div id="customTargetInputs" style="display: none;">
+            <div class="input-group">
+                <label for="targetWidth">Target Width (mm):</label>
+                <input type="number" id="targetWidth" min="1" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="targetHeight">Target Height (mm):</label>
+                <input type="number" id="targetHeight" min="1" step="0.1">
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="bleedInput">Bleed/Margin (mm):</label>
+            <input type="number" id="bleedInput" value="0" min="0" step="0.5">
+        </div>
+        
+        <div class="input-group">
+            <label for="cutWidthInput">Cut Width (mm):</label>
+            <input type="number" id="cutWidthInput" value="0" min="0" step="0.1">
+        </div>
+        
+        <button id="calculateBtn">Calculate Optimal Cuts</button>
+    </div>
+    
+    <div class="toggle-section">
+        <button id="togglePaperSizes" class="toggle-btn">Show Paper Size Reference</button>
+    </div>
+    
+    <div id="paperSizesReference">
+        <h3>Standard Paper Sizes (Width × Height in mm)</h3>
+        <div class="paper-sizes">
+            <div class="paper-size-item">A0: 841 × 1189</div>
+            <div class="paper-size-item">A1: 594 × 841</div>
+            <div class="paper-size-item">A2: 420 × 594</div>
+            <div class="paper-size-item">A3: 297 × 420</div>
+            <div class="paper-size-item">A4: 210 × 297</div>
+            <div class="paper-size-item">A5: 148 × 210</div>
+            <div class="paper-size-item">A6: 105 × 148</div>
+            <div class="paper-size-item">SRA0: 900 × 1280</div>
+            <div class="paper-size-item">SRA1: 640 × 900</div>
+            <div class="paper-size-item">SRA2: 450 × 640</div>
+            <div class="paper-size-item">SRA3: 320 × 450</div>
+            <div class="paper-size-item">SRA4: 225 × 320</div>
+        </div>
+    </div>
+    
+    <div id="result"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Paper sizes in mm (width, height)
+            const paperSizes = {
+                'A0': [841, 1189],
+                'A1': [594, 841],
+                'A2': [420, 594],
+                'A3': [297, 420],
+                'A4': [210, 297],
+                'A5': [148, 210],
+                'A6': [105, 148],
+                'SRA0': [900, 1280],
+                'SRA1': [640, 900],
+                'SRA2': [450, 640],
+                'SRA3': [320, 450],
+                'SRA4': [225, 320]
+            };
+            
+            const sourceSelect = document.getElementById('sourceSelect');
+            const targetSelect = document.getElementById('targetSelect');
+            const customSourceInputs = document.getElementById('customSourceInputs');
+            const customTargetInputs = document.getElementById('customTargetInputs');
+            const sourceWidth = document.getElementById('sourceWidth');
+            const sourceHeight = document.getElementById('sourceHeight');
+            const targetWidth = document.getElementById('targetWidth');
+            const targetHeight = document.getElementById('targetHeight');
+            const bleedInput = document.getElementById('bleedInput');
+            const cutWidthInput = document.getElementById('cutWidthInput');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const result = document.getElementById('result');
+            const togglePaperSizes = document.getElementById('togglePaperSizes');
+            const paperSizesReference = document.getElementById('paperSizesReference');
+            
+            sourceSelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customSourceInputs.style.display = 'block';
+                } else {
+                    customSourceInputs.style.display = 'none';
+                }
+            });
+            
+            targetSelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customTargetInputs.style.display = 'block';
+                } else {
+                    customTargetInputs.style.display = 'none';
+                }
+            });
+            
+            togglePaperSizes.addEventListener('click', function() {
+                if (paperSizesReference.style.display === 'none' || paperSizesReference.style.display === '') {
+                    paperSizesReference.style.display = 'block';
+                    togglePaperSizes.textContent = 'Hide Paper Size Reference';
+                } else {
+                    paperSizesReference.style.display = 'none';
+                    togglePaperSizes.textContent = 'Show Paper Size Reference';
+                }
+            });
+            
+            calculateBtn.addEventListener('click', function() {
+                // Get source dimensions
+                let sourceW, sourceH;
+                if (sourceSelect.value === 'custom') {
+                    sourceW = parseFloat(sourceWidth.value);
+                    sourceH = parseFloat(sourceHeight.value);
+                    if (isNaN(sourceW) || isNaN(sourceH) || sourceW <= 0 || sourceH <= 0) {
+                        result.innerHTML = '<p class="warning">Please enter valid source dimensions.</p>';
+                        return;
+                    }
+                } else {
+                    [sourceW, sourceH] = paperSizes[sourceSelect.value];
+                }
+                
+                // Get target dimensions
+                let targetW, targetH;
+                if (targetSelect.value === 'custom') {
+                    targetW = parseFloat(targetWidth.value);
+                    targetH = parseFloat(targetHeight.value);
+                    if (isNaN(targetW) || isNaN(targetH) || targetW <= 0 || targetH <= 0) {
+                        result.innerHTML = '<p class="warning">Please enter valid target dimensions.</p>';
+                        return;
+                    }
+                } else {
+                    [targetW, targetH] = paperSizes[targetSelect.value];
+                }
+                
+                // Get bleed and cut width
+                const bleed = parseFloat(bleedInput.value) || 0;
+                const cutWidth = parseFloat(cutWidthInput.value) || 0;
+                
+                // Add bleed to target size
+                const targetWithBleedW = targetW + (2 * bleed);
+                const targetWithBleedH = targetH + (2 * bleed);
+                
+                // Calculate best layout
+                const results = calculateOptimalCuts(sourceW, sourceH, targetWithBleedW, targetWithBleedH, cutWidth);
+                displayResults(results, sourceW, sourceH, targetW, targetH, targetWithBleedW, targetWithBleedH, bleed, cutWidth);
+            });
+            
+            function calculateOptimalCuts(sourceWidth, sourceHeight, targetWidth, targetHeight, cutWidth) {
+                // Try all four orientations (rotate source and/or target)
+                const options = [
+                    calculateCutsForOrientation(sourceWidth, sourceHeight, targetWidth, targetHeight, cutWidth),
+                    calculateCutsForOrientation(sourceWidth, sourceHeight, targetHeight, targetWidth, cutWidth),
+                    calculateCutsForOrientation(sourceHeight, sourceWidth, targetWidth, targetHeight, cutWidth),
+                    calculateCutsForOrientation(sourceHeight, sourceWidth, targetHeight, targetWidth, cutWidth)
+                ];
+                
+                // Find the orientation with the most pieces
+                return options.reduce((best, current) => 
+                    current.totalPieces > best.totalPieces ? current : best
+                );
+            }
+            
+            function calculateCutsForOrientation(sourceWidth, sourceHeight, targetWidth, targetHeight, cutWidth) {
+                // Calculate how many pieces can fit in each dimension
+                const piecesAcross = Math.floor((sourceWidth + cutWidth) / (targetWidth + cutWidth));
+                const piecesDown = Math.floor((sourceHeight + cutWidth) / (targetHeight + cutWidth));
+                
+                // Calculate total pieces
+                const totalPieces = piecesAcross * piecesDown;
+                
+                // Calculate waste
+                const usedWidth = (piecesAcross * targetWidth) + ((piecesAcross - 1) * cutWidth);
+                const usedHeight = (piecesDown * targetHeight) + ((piecesDown - 1) * cutWidth);
+                const totalArea = sourceWidth * sourceHeight;
+                const usedArea = totalPieces * (targetWidth * targetHeight);
+                const wasteArea = totalArea - usedArea;
+                const wastePercentage = (wasteArea / totalArea) * 100;
+                
+                // Calculate leftover strips
+                const leftoverX = sourceWidth - usedWidth;
+                const leftoverY = sourceHeight - usedHeight;
+                
+                return {
+                    sourceWidth,
+                    sourceHeight,
+                    targetWidth,
+                    targetHeight,
+                    piecesAcross,
+                    piecesDown,
+                    totalPieces,
+                    wasteArea,
+                    wastePercentage,
+                    leftoverX,
+                    leftoverY,
+                    usedWidth,
+                    usedHeight
+                };
+            }
+            
+            function displayResults(results, sourceWidth, sourceHeight, targetOriginalWidth, targetOriginalHeight, targetWidth, targetHeight, bleed, cutWidth) {
+                // Check if any pieces could be generated
+                if (results.totalPieces === 0) {
+                    result.innerHTML = `
+                        <div class="results-container">
+                            <h2>Results</h2>
+                            <p class="warning">The target paper is too large to fit on the source paper, even when rotated.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Create results message
+                let sourceLabel = sourceSelect.value === 'custom' ? 'Custom' : sourceSelect.value;
+                let targetLabel = targetSelect.value === 'custom' ? 'Custom' : targetSelect.value;
+                
+                let html = `
+                    <div class="results-container">
+                        <h2>Results</h2>
+                        <div class="stat">From a ${sourceLabel} sheet (${sourceWidth} × ${sourceHeight} mm)</div>
+                        <div class="stat">You can get <strong>${results.totalPieces}</strong> ${targetLabel} sheets (${targetOriginalWidth} × ${targetOriginalHeight} mm)</div>
+                        <div class="stat">Layout: ${results.piecesAcross} across × ${results.piecesDown} down</div>
+                        <div class="stat">Waste: ${results.wastePercentage.toFixed(1)}% (${results.wasteArea.toFixed(0)} mm²)</div>
+                    `;
+                
+                if (results.sourceWidth !== sourceWidth || results.sourceHeight !== sourceHeight) {
+                    html += `<div class="stat">Best orientation: Rotate source paper 90°</div>`;
+                }
+                
+                if (results.targetWidth !== targetWidth || results.targetHeight !== targetHeight) {
+                    html += `<div class="stat">Best orientation: Rotate target paper 90°</div>`;
+                }
+                
+                if (bleed > 0) {
+                    html += `<div class="stat">Including ${bleed} mm bleed on all sides</div>`;
+                }
+                
+                if (cutWidth > 0) {
+                    html += `<div class="stat">Including ${cutWidth} mm cutting width</div>`;
+                }
+                
+                // Add canvas for visualization
+                html += `<canvas id="cutDiagram" height="600"></canvas>`;
+                html += `</div>`;
+                result.innerHTML = html;
+                
+                // Draw the cutting diagram
+                drawCuttingDiagram(results, bleed, cutWidth);
+            }
+            
+            function drawCuttingDiagram(results, bleed, cutWidth) {
+                const canvas = document.getElementById('cutDiagram');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas dimensions to maintain aspect ratio
+                const maxWidth = canvas.parentElement.clientWidth;
+                const scale = maxWidth / results.sourceWidth;
+                canvas.width = results.sourceWidth * scale;
+                canvas.height = results.sourceHeight * scale;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw the source paper
+                ctx.fillStyle = '#f8f9fa';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw the cutting lines
+                ctx.strokeStyle = '#ff6666';
+                ctx.lineWidth = 1;
+                
+                // Vertical cutting lines
+                for (let i = 1; i < results.piecesAcross; i++) {
+                    const x = i * (results.targetWidth + cutWidth) - (cutWidth / 2);
+                    const scaledX = x * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(scaledX, 0);
+                    ctx.lineTo(scaledX, canvas.height);
+                    ctx.stroke();
+                }
+                
+                // Horizontal cutting lines
+                for (let i = 1; i < results.piecesDown; i++) {
+                    const y = i * (results.targetHeight + cutWidth) - (cutWidth / 2);
+                    const scaledY = y * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(0, scaledY);
+                    ctx.lineTo(canvas.width, scaledY);
+                    ctx.stroke();
+                }
+                
+                // Draw each target piece with bleed areas
+                for (let row = 0; row < results.piecesDown; row++) {
+                    for (let col = 0; col < results.piecesAcross; col++) {
+                        const x = col * (results.targetWidth + cutWidth);
+                        const y = row * (results.targetHeight + cutWidth);
+                        
+                        // Draw bleed area
+                        if (bleed > 0) {
+                            ctx.fillStyle = '#ffe0e0';
+                            ctx.fillRect(
+                                x * scale,
+                                y * scale,
+                                results.targetWidth * scale,
+                                results.targetHeight * scale
+                            );
+                            
+                            // Draw trim area
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(
+                                (x + bleed) * scale,
+                                (y + bleed) * scale,
+                                (results.targetWidth - 2 * bleed) * scale,
+                                (results.targetHeight - 2 * bleed) * scale
+                            );
+                        } else {
+                            // If no bleed, just draw the target piece
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(
+                                x * scale,
+                                y * scale,
+                                results.targetWidth * scale,
+                                results.targetHeight * scale
+                            );
+                        }
+                        
+                        // Draw outline of the target piece
+                        ctx.strokeStyle = '#333';
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(
+                            x * scale,
+                            y * scale,
+                            results.targetWidth * scale,
+                            results.targetHeight * scale
+                        );
+                        
+                        // If bleed exists, draw the trim line
+                        if (bleed > 0) {
+                            ctx.strokeStyle = '#009900';
+                            ctx.lineWidth = 0.5;
+                            ctx.strokeRect(
+                                (x + bleed) * scale,
+                                (y + bleed) * scale,
+                                (results.targetWidth - 2 * bleed) * scale,
+                                (results.targetHeight - 2 * bleed) * scale
+                            );
+                        }
+                    }
+                }
+                
+                // Add legend
+                ctx.font = '14px sans-serif';
+                
+                // Draw legend background
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fillRect(10, 10, 200, bleed > 0 ? 110 : 70);
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(10, 10, 200, bleed > 0 ? 110 : 70);
+                
+                // Cut line legend
+                ctx.strokeStyle = '#ff6666';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(20, 30);
+                ctx.lineTo(60, 30);
+                ctx.stroke();
+                ctx.fillStyle = '#333';
+                ctx.fillText('Cut line', 70, 35);
+                
+                // Target sheet outline
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(20, 50, 40, 20);
+                ctx.fillText('Sheet outline', 70, 65);
+                
+                // Bleed area
+                if (bleed > 0) {
+                    ctx.fillStyle = '#ffe0e0';
+                    ctx.fillRect(20, 80, 40, 20);
+                    ctx.strokeStyle = '#009900';
+                    ctx.strokeRect(25, 85, 30, 10);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(25, 85, 30, 10);
+                    ctx.fillStyle = '#333';
+                    ctx.fillText('Bleed area & trim line', 70, 95);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
